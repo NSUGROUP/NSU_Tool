@@ -1,6 +1,7 @@
 package com.Nullvalue.NSU_Tool;
 
 import java.io.*;
+import java.util.zip.*;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -30,18 +31,34 @@ public class Main
     	window = new JFrame("NSU Tool");
     	JPanel mainPanel = new JPanel();
     	JButton bgButton = new JButton("Change Background");
+    	JButton zipButton = new JButton("Unzip File");
 
     	window.setSize(windowWidth, windowHeight);
     	window.setLocation(((montiorWidth / 2) - windowWidth / 2), ((monitorHeight / 2) - windowHeight / 2));
     	window.getContentPane().add(mainPanel);
     	
     	mainPanel.add(bgButton);
+    	mainPanel.add(zipButton);
     	
 		bgButton.addActionListener(new ActionListener()
 		{
 			public void actionPerformed(ActionEvent e)
 			{
 				changeBackground();
+			}
+		});
+		
+		zipButton.addActionListener(new ActionListener()
+		{
+			public void actionPerformed(ActionEvent arg0)
+			{
+				try
+				{
+					unzipFile();
+				} catch (Exception e)
+				{
+					e.printStackTrace();
+				}
 			}
 		});
     	
@@ -60,6 +77,54 @@ public class Main
             
             User32.INSTANCE.SystemParametersInfo(0x0014, 0, imagePath, 1);
             System.out.println(String.format("Changed desktop wallpaper to %s", imagePath));
+        }
+    }
+    
+    public static void unzipFile() throws Exception
+    {
+    	JFileChooser folderSelector = new JFileChooser();
+        int returnValue = folderSelector.showOpenDialog(window);
+        String folderPath = null;
+        byte[] buffer = new byte[1024];
+        
+        if (returnValue == JFileChooser.APPROVE_OPTION)
+        {
+            folderPath = folderSelector.getSelectedFile().getPath();
+            System.out.println(folderPath);
+            
+        	File folder = new File(folderSelector.getSelectedFile().getName());
+        	if(!folder.exists()){
+        		folder.mkdir();
+        	}
+
+            System.out.println(folderPath);
+        	ZipInputStream zis = new ZipInputStream(new FileInputStream(folderSelector.getSelectedFile().getParent()));
+        	ZipEntry ze = zis.getNextEntry();
+        		
+        	while(ze!=null){
+        			
+        	   String fileName = ze.getName();
+               File newFile = new File(folderSelector.getSelectedFile().getName() + "\\" + fileName);
+                    
+               System.out.println("file unzip : "+ newFile.getAbsoluteFile());
+                    
+                //create all non exists folders
+                //else you will hit FileNotFoundException for compressed folder
+                new File(newFile.getParent()).mkdirs();
+                  
+                FileOutputStream fos = new FileOutputStream(newFile);             
+
+                int len;
+                while ((len = zis.read(buffer)) > 0) {
+           		fos.write(buffer, 0, len);
+                }
+            		
+                fos.close();   
+                ze = zis.getNextEntry();
+        	}
+        	
+            zis.closeEntry();
+        	zis.close();
         }
     }
 
