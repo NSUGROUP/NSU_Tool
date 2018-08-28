@@ -14,7 +14,8 @@ public class Main
 {
     private static JFrame window;
     
-    public static interface User32 extends Library {
+    public static interface User32 extends Library
+    {
         User32 INSTANCE = (User32) Native.loadLibrary("user32", User32.class, W32APIOptions.DEFAULT_OPTIONS);        
         boolean SystemParametersInfo(int one, int two, String s, int three);         
     }
@@ -28,12 +29,15 @@ public class Main
         int windowWidth = 350;
         int windowHeight = 200;
         
+        ImageIcon icon = new ImageIcon("Resources/b.png");
+        
     	window = new JFrame("NSU Tool");
     	JPanel mainPanel = new JPanel();
     	JButton bgButton = new JButton("Change Background");
     	JButton zipButton = new JButton("Unzip File");
 
     	window.setSize(windowWidth, windowHeight);
+    	window.setIconImage(icon.getImage());
     	window.setLocation(((montiorWidth / 2) - windowWidth / 2), ((monitorHeight / 2) - windowHeight / 2));
     	window.getContentPane().add(mainPanel);
     	
@@ -82,49 +86,57 @@ public class Main
     
     public static void unzipFile() throws Exception
     {
-    	JFileChooser folderSelector = new JFileChooser();
-        int returnValue = folderSelector.showOpenDialog(window);
+    	JFileChooser zipSelector = new JFileChooser();
+        int returnValue = zipSelector.showOpenDialog(window);
         String folderPath = null;
         byte[] buffer = new byte[1024];
         
+        int pos = zipSelector.getSelectedFile().getName().lastIndexOf(".");
+        String name =  pos > 0 ? zipSelector.getSelectedFile().getName().substring(0, pos) : zipSelector.getSelectedFile().getName();
+        String destDir = zipSelector.getSelectedFile().getParent();
+        System.out.println(destDir);
+        
         if (returnValue == JFileChooser.APPROVE_OPTION)
         {
-            folderPath = folderSelector.getSelectedFile().getPath();
-            System.out.println(folderPath);
+            folderPath = zipSelector.getSelectedFile().getPath();
+            File dir = new File(destDir);
             
-        	File folder = new File(folderSelector.getSelectedFile().getName());
-        	if(!folder.exists()){
-        		folder.mkdir();
-        	}
+            if(!dir.exists()) dir.mkdirs();
+            FileInputStream fis;
+            
+            try
+            {
+                fis = new FileInputStream(folderPath);
+                ZipInputStream zis = new ZipInputStream(fis);
+                ZipEntry ze = zis.getNextEntry();
+                while(ze != null)
+                {
+                    String fileName = ze.getName();
+                    File newFile = new File(destDir + File.separator + fileName);
+                    new File(newFile.getParent()).mkdirs();
+                    System.out.println("Unzipping to " + newFile.getAbsolutePath());
 
-            System.out.println(folderPath);
-        	ZipInputStream zis = new ZipInputStream(new FileInputStream(folderSelector.getSelectedFile().getParent()));
-        	ZipEntry ze = zis.getNextEntry();
-        		
-        	while(ze!=null){
-        			
-        	   String fileName = ze.getName();
-               File newFile = new File(folderSelector.getSelectedFile().getName() + "\\" + fileName);
+                    FileOutputStream fos = new FileOutputStream(newFile);
+                    int len;
                     
-               System.out.println("file unzip : "+ newFile.getAbsoluteFile());
-                    
-                //create all non exists folders
-                //else you will hit FileNotFoundException for compressed folder
-                new File(newFile.getParent()).mkdirs();
-                  
-                FileOutputStream fos = new FileOutputStream(newFile);             
+                    while ((len = zis.read(buffer)) > 0)
+                    {
+                    	fos.write(buffer, 0, len);
+                    }
+                    fos.close();
 
-                int len;
-                while ((len = zis.read(buffer)) > 0) {
-           		fos.write(buffer, 0, len);
+                    zis.closeEntry();
+                    ze = zis.getNextEntry();
                 }
-            		
-                fos.close();   
-                ze = zis.getNextEntry();
-        	}
-        	
-            zis.closeEntry();
-        	zis.close();
+
+                zis.closeEntry();
+                zis.close();
+                fis.close();
+                
+            } catch (IOException e)
+            {
+                e.printStackTrace();
+            }
         }
     }
 
