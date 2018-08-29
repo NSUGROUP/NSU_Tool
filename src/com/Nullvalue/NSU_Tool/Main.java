@@ -1,10 +1,20 @@
 package com.Nullvalue.NSU_Tool;
 
-import java.io.*;
-import java.util.zip.*;
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.Frame;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.File;
+import java.io.IOException;
+
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JFileChooser;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+
+import org.zeroturnaround.zip.ZipUtil;
 
 import com.sun.jna.Library;
 import com.sun.jna.Native;
@@ -29,7 +39,7 @@ public class Main
         int windowWidth = 350;
         int windowHeight = 200;
         
-        ImageIcon icon = new ImageIcon("Resources/b.png");
+        ImageIcon icon = new ImageIcon("src/b.png");
         
     	window = new JFrame("NSU Tool");
     	JPanel mainPanel = new JPanel();
@@ -84,59 +94,18 @@ public class Main
         }
     }
     
-    public static void unzipFile() throws Exception
+    public static void unzipFile()
     {
     	JFileChooser zipSelector = new JFileChooser();
         int returnValue = zipSelector.showOpenDialog(window);
-        String folderPath = null;
-        byte[] buffer = new byte[1024];
-        
-        int pos = zipSelector.getSelectedFile().getName().lastIndexOf(".");
-        String name =  pos > 0 ? zipSelector.getSelectedFile().getName().substring(0, pos) : zipSelector.getSelectedFile().getName();
-        String destDir = zipSelector.getSelectedFile().getParent();
-        System.out.println(destDir);
         
         if (returnValue == JFileChooser.APPROVE_OPTION)
         {
-            folderPath = zipSelector.getSelectedFile().getPath();
-            File dir = new File(destDir);
-            
-            if(!dir.exists()) dir.mkdirs();
-            FileInputStream fis;
-            
-            try
-            {
-                fis = new FileInputStream(folderPath);
-                ZipInputStream zis = new ZipInputStream(fis);
-                ZipEntry ze = zis.getNextEntry();
-                while(ze != null)
-                {
-                    String fileName = ze.getName();
-                    File newFile = new File(destDir + File.separator + fileName);
-                    new File(newFile.getParent()).mkdirs();
-                    System.out.println("Unzipping to " + newFile.getAbsolutePath());
-
-                    FileOutputStream fos = new FileOutputStream(newFile);
-                    int len;
-                    
-                    while ((len = zis.read(buffer)) > 0)
-                    {
-                    	fos.write(buffer, 0, len);
-                    }
-                    fos.close();
-
-                    zis.closeEntry();
-                    ze = zis.getNextEntry();
-                }
-
-                zis.closeEntry();
-                zis.close();
-                fis.close();
-                
-            } catch (IOException e)
-            {
-                e.printStackTrace();
-            }
+        	String zipPath = zipSelector.getSelectedFile().getPath();
+        	String zipName = zipSelector.getSelectedFile().getName().replaceAll("[.]", "");
+        	String output  = zipSelector.getSelectedFile().getParent() + "\\" + zipName;
+        	
+        	ZipUtil.unpack(new File(zipPath), new File(output));
         }
     }
 

@@ -4,5 +4,8 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="lib" path="Resources/jna-4.5.2.jar"/>
 	<classpathentry kind="lib" path="Resources/jna-platform-4.5.2.jar"/>
+	<classpathentry kind="lib" path="Resources/slf4j-api-1.7.25.jar"/>
+	<classpathentry kind="lib" path="Resources/slf4j-simple-1.7.25.jar"/>
+	<classpathentry kind="lib" path="Resources/zt-zip-1.13.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
