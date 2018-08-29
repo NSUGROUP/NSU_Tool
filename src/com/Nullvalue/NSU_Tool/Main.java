@@ -12,6 +12,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.WindowConstants;
 import javax.swing.JPanel;
 
 import org.zeroturnaround.zip.ZipUtil;
@@ -50,6 +51,7 @@ public class Main
     	window.setIconImage(icon.getImage());
     	window.setLocation(((montiorWidth / 2) - windowWidth / 2), ((monitorHeight / 2) - windowHeight / 2));
     	window.getContentPane().add(mainPanel);
+    	window.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
     	
     	mainPanel.add(bgButton);
     	mainPanel.add(zipButton);
