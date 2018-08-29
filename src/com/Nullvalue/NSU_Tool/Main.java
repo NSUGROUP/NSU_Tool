@@ -39,7 +39,7 @@ public class Main
         int windowWidth = 350;
         int windowHeight = 200;
         
-        ImageIcon icon = new ImageIcon("src/b.png");
+        ImageIcon icon = new ImageIcon("resources/b.png");
         
     	window = new JFrame("NSU Tool");
     	JPanel mainPanel = new JPanel();
