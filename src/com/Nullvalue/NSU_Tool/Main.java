@@ -5,21 +5,33 @@ import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
+import org.apache.commons.io.FileUtils;
+
 import com.sun.jna.Library;
 import com.sun.jna.Native;
 import com.sun.jna.win32.W32APIOptions;
 
+import mslinks.ShellLink;
+
 public class Main
 {
     private static JFrame window;
+    private static boolean nearbyCheckState = false;
     
     public static interface User32 extends Library
     {
@@ -33,7 +45,7 @@ public class Main
         
     	int monitorWidth = gd.getDisplayMode().getWidth();
         int monitorHeight = gd.getDisplayMode().getHeight();
-        int windowWidth = 220;
+        int windowWidth = 240;
         int windowHeight = 200;
         
     	window = new JFrame("NSU Tool");
@@ -44,12 +56,16 @@ public class Main
     	window.getContentPane().add(mainPanel);
     	window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     	window.setResizable(false);
+    	window.setIconImage(new ImageIcon(Main.class.getResource("/images/bbe.png")).getImage());
 
     	JButton bgButton = new JButton("Change Background");
-    	JButton exeButton = new JButton("Executable");
+    	JButton exeButton = new JButton("Add Executable");
+    	
+    	JCheckBox nearbyFilesCheck = new JCheckBox("<html>Include files in parent<br>directory as dependencies</html>");
     	
     	mainPanel.add(bgButton);
     	mainPanel.add(exeButton);
+    	mainPanel.add(nearbyFilesCheck);
     	
 		bgButton.addActionListener(new ActionListener()
 		{
@@ -63,8 +79,16 @@ public class Main
 		{
 			public void actionPerformed(ActionEvent e)
 			{
-				openExe();
+				addExe();
 			}
+		});
+		
+		nearbyFilesCheck.addItemListener(new ItemListener()
+		{
+		    public void itemStateChanged(ItemEvent e)
+		    {
+	        	nearbyCheckState = nearbyFilesCheck.isSelected();
+		    }
 		});
     	
     	window.setVisible(true);
@@ -94,39 +118,106 @@ public class Main
         }
     }
 
-    public static void openExe()
+    public static void addExe()
     {
-        Frame mainFrame = new Frame("Pick Frame");
-        mainFrame.setSize(0, 0);
-        String ExePath = null;
-        
-        JFileChooser exeFile = new JFileChooser(System.getProperty("user.home") + "/Desktop/");
-        FileNameExtensionFilter filter = new FileNameExtensionFilter("exe", "exe", "Executable");
-        exeFile.setFileFilter(filter);
-        
-        int returnValue = exeFile.showOpenDialog(mainFrame);
-        
-        if (returnValue == JFileChooser.APPROVE_OPTION)
-        {
-        	if (getFileExtension(exeFile.getSelectedFile()).equals("exe"))
-        	{
-        		ExePath = exeFile.getSelectedFile().getPath();
-                
-                try
-                {
-                    Runtime.getRuntime().exec(ExePath);
-                    System.out.println(String.format("Attempted to open program at path %s", ExePath));
-                    
-                } catch (IOException openFileException) {
-                    new ErrorMessage(openFileException, "Error occured while opening file...");
-                }
-        	} else {
-        		new ErrorMessage("You must choose an executable file (.exe)");
-        	}
-        }
+    	if (new File(System.getenv("ProgramFiles(X86)") + "\\DRC INSIGHT Online Assessments").exists())
+    	{
+	        Frame mainFrame = new Frame("Pick Frame");
+	        mainFrame.setSize(0, 0);
+	        
+	        JFileChooser exeFile = new JFileChooser(System.getProperty("user.home") + "/Desktop/");
+	        FileNameExtensionFilter filter = new FileNameExtensionFilter("exe", "exe", "Executable");
+	        exeFile.setFileFilter(filter);
+	        
+	        int returnValue = exeFile.showOpenDialog(mainFrame);
+	        
+	        if (returnValue == JFileChooser.APPROVE_OPTION)
+	        {
+	        	if (getFileExtension(exeFile.getSelectedFile()).equals("exe"))
+	        	{
+	        		if (nearbyCheckState == true)
+		        	{
+		        		String nameNoExtension = exeFile.getSelectedFile().getName().substring(0, exeFile.getSelectedFile().getName().lastIndexOf('.'));
+		        		String name = exeFile.getSelectedFile().getName();
+		        		File exeDirectory = new File(System.getenv("ProgramFiles(X86)") + "\\DRC INSIGHT Online Assessments\\" + nameNoExtension);
+		        		
+		        		if (!exeDirectory.exists())
+		        		{
+		        			System.out.println(exeDirectory.mkdir());
+		        		}
+		        		
+		        		if(exeDirectory.isDirectory())
+		        		{
+		        		    File[] content = new File(exeFile.getSelectedFile().getParent()).listFiles();
+		        		    for(int i = 0; i < content.length; i++)
+		        		    {
+		        		    	if (!content[i].isDirectory())
+		        		    	{
+		        		    		try
+									{
+										Files.copy(Paths.get(content[i].getPath()), Paths.get(exeDirectory.getPath() + "\\" + content[i].getName()));
+									} catch (Exception e) {
+										new ErrorMessage(e);
+										break;
+									}
+		        		    	} else {
+		        		    		try
+									{
+										FileUtils.moveDirectoryToDirectory(new File(content[i].getPath()), new File(exeDirectory.getPath()), true);
+									} catch (IOException e)
+									{
+										new ErrorMessage(e);
+									}
+		        		    	}
+		        		    }
+		        		    
+		        		    File newExe = new File(exeDirectory + "\\" + name);
+		        		    try
+							{
+								ShellLink.createLink(newExe.getPath(), System.getProperty("user.home") + "/Desktop/" + nameNoExtension + ".lnk");
+								new ErrorMessage("Short cut to \"" + name + "\" created and added to the desktop.");
+							} catch (Exception e) {
+								new ErrorMessage(e, "Error creating shortcut");
+							}
+		        		}
+		        	} else {
+		        		String nameNoExtension = exeFile.getSelectedFile().getName().substring(0, exeFile.getSelectedFile().getName().lastIndexOf('.'));
+		        		String name = exeFile.getSelectedFile().getName();
+		        		File exeDirectory = new File(System.getenv("ProgramFiles(X86)") + "\\DRC INSIGHT Online Assessments\\" + nameNoExtension);
+		        		
+		        		if (!exeDirectory.exists())
+		        		{
+		        			System.out.println(exeDirectory.mkdir());
+		        		}
+		        		
+	        		    File content = new File(exeFile.getSelectedFile().getPath());
+	        		    
+        		        try
+						{
+							Files.copy(Paths.get(content.getPath()), Paths.get(exeDirectory.getPath() + "\\" + content.getName()));
+						} catch (Exception e) {
+							new ErrorMessage(e);
+						}
+	        		    
+	        		    File newExe = new File(exeDirectory + "\\" + name);
+	        		    try
+						{
+							ShellLink.createLink(newExe.getPath(), System.getProperty("user.home") + "/Desktop/" + nameNoExtension + ".lnk");
+							new ErrorMessage("Short cut to \"" + name + "\" created and added to the desktop.");
+						} catch (Exception e) {
+							new ErrorMessage(e, "Error creating shortcut");
+						}
+		        	}
+	        	} else {
+	        		new ErrorMessage("You must choose an executable file (.exe)");
+	        	}
+	        }
+    	} else {
+    		new ErrorMessage("This tool must be run on an OCPS distributed machine to function.");
+    	}
     }
     
-    private static String getFileExtension(File file)
+    public static String getFileExtension(File file)
     {
         String extension = "";
  

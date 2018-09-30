@@ -61,4 +61,13 @@ public class ErrorMessage
 
         showMessage("<b>" + Precursor + "</b>" + "\n" + message);
 	}
+	
+	public ErrorMessage(Exception e)
+	{
+		StringWriter sw = new StringWriter();
+        e.printStackTrace(new PrintWriter(sw));
+        String message = sw.toString();
+
+        showMessage(message);
+	}
 }
