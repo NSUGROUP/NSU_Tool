@@ -7,5 +7,6 @@
 	<classpathentry kind="lib" path="C:/Users/Tanner/eclipse-workspace/Jars/jna-platform-4.5.2.jar"/>
 	<classpathentry kind="lib" path="C:/Users/Tanner/eclipse-workspace/Jars/mslinks.jar"/>
 	<classpathentry kind="lib" path="C:/Users/Tanner/eclipse-workspace/Jars/commons-io-2.6.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Tanner/eclipse-workspace/Jars/zip4j_1.3.3.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
