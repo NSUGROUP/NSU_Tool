@@ -11,7 +11,6 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -114,100 +113,80 @@ public class Main
     public static void changeBackground()
     {
     	JFileChooser imageSelector = new JFileChooser(System.getProperty("user.home") + "/Desktop/");
-    	FileNameExtensionFilter filter = new FileNameExtensionFilter("Images (.jpg, .png, .gif)", "jpg", "png", "JPEG", "gif");
-    	imageSelector.setFileFilter(filter);
+    	imageSelector.setFileFilter(new FileNameExtensionFilter("Images (.jpg, .png, .gif)", "jpg", "png", "JPEG", "gif"));
     	
-        int returnValue = imageSelector.showOpenDialog(window);
-        String imagePath;
-        
-        if (returnValue == JFileChooser.APPROVE_OPTION)
+        if (imageSelector.showOpenDialog(window) == JFileChooser.APPROVE_OPTION)
         {
-        	System.out.println(getFileExtension(imageSelector.getSelectedFile()));
-        	if (getFileExtension(imageSelector.getSelectedFile()).equals("jpg") || getFileExtension(imageSelector.getSelectedFile()).equals("png") || getFileExtension(imageSelector.getSelectedFile()).equals("gif"))
-        	{
-	            imagePath = imageSelector.getSelectedFile().getPath();
-	            
-	            User32.INSTANCE.SystemParametersInfo(0x0014, 0, imagePath, 1);
-	            System.out.println(String.format("Changed desktop wallpaper to %s", imagePath));
-        	} else {
-        		new ErrorMessage("You can only select files with the extension jpg, png, or gif.");
-        	}
+        	File selectedFile = imageSelector.getSelectedFile();
+        	String fileExtension = getFileExtension(selectedFile);
+        	
+        	if (fileExtension.equals("jpg") || fileExtension.equals("png") || fileExtension.equals("gif"))
+	            User32.INSTANCE.SystemParametersInfo(0x0014, 0, selectedFile.getPath(), 1);
+        	else
+        		new ConfirmationMessage("You can only select files with the extension jpg, png, or gif.");
         }
     }
 
     public static void addExe()
     {
-    	if (new File(System.getenv("ProgramFiles(X86)") + "\\DRC INSIGHT Online Assessments").exists())
+    	File drcFolderFile = new File(System.getenv("ProgramFiles(X86)") + "\\DRC INSIGHT Online Assessments");
+    	
+    	if (drcFolderFile.exists())
     	{
-	        Frame mainFrame = new Frame("Pick Frame");
+	        Frame mainFrame = new Frame();
 	        mainFrame.setSize(0, 0);
 	        
 	        JFileChooser exeFile = new JFileChooser(System.getProperty("user.home") + "/Desktop/");
-	        FileNameExtensionFilter filter = new FileNameExtensionFilter("Executable (.exe)", "exe", "Executable");
-	        exeFile.setFileFilter(filter);
+	        exeFile.setFileFilter(new FileNameExtensionFilter("Executable (.exe)", "exe", "Executable"));
 	        
-	        int returnValue = exeFile.showOpenDialog(mainFrame);
-	        
-	        if (returnValue == JFileChooser.APPROVE_OPTION)
+	        if (exeFile.showOpenDialog(mainFrame) == JFileChooser.APPROVE_OPTION)
 	        {
-	        	if (getFileExtension(exeFile.getSelectedFile()).equals("exe"))
+	        	File selectedFile = exeFile.getSelectedFile();
+	        	
+	        	if (getFileExtension(selectedFile).equals("exe"))
 	        	{
+	        		String nameNoExtension = selectedFile.getName().substring(0, selectedFile.getName().lastIndexOf('.'));
+	        		String name = selectedFile.getName();
+	        		File exeDirectory = new File(drcFolderFile + "\\" + nameNoExtension);
+	        		
 	        		if (nearbyCheckState == true)
 		        	{
-		        		String nameNoExtension = exeFile.getSelectedFile().getName().substring(0, exeFile.getSelectedFile().getName().lastIndexOf('.'));
-		        		String name = exeFile.getSelectedFile().getName();
-		        		File exeDirectory = new File(System.getenv("ProgramFiles(X86)") + "\\DRC INSIGHT Online Assessments\\" + nameNoExtension);
-		        		
 		        		if (!exeDirectory.exists())
-		        		{
-		        			System.out.println(exeDirectory.mkdir());
-		        		}
+		        			exeDirectory.mkdir();
 		        		
 		        		if(exeDirectory.isDirectory())
 		        		{
-		        		    File[] content = new File(exeFile.getSelectedFile().getParent()).listFiles();
+		        		    File[] content = new File(selectedFile.getParent()).listFiles();
 		        		    for(int i = 0; i < content.length; i++)
 		        		    {
-		        		    	if (!content[i].isDirectory())
+		        		    	try
 		        		    	{
-		        		    		try
-									{
-										Files.copy(Paths.get(content[i].getPath()), Paths.get(exeDirectory.getPath() + "\\" + content[i].getName()));
-									} catch (Exception e) {
-										new ErrorMessage(e);
-										break;
-									}
-		        		    	} else {
-		        		    		try
-									{
+			        		    	if (content[i].isDirectory())
 										FileUtils.moveDirectoryToDirectory(new File(content[i].getPath()), new File(exeDirectory.getPath()), true);
-									} catch (IOException e)
-									{
-										new ErrorMessage(e);
-									}
+			        		    	else
+			        		    		Files.copy(Paths.get(content[i].getPath()), Paths.get(exeDirectory.getPath() + "\\" + content[i].getName()));
+			        		    	
+		        		    	} catch (Exception e) {
+		        		    		new ErrorMessage(e);
+		        		    		break;
 		        		    	}
 		        		    }
 		        		    
 		        		    File newExe = new File(exeDirectory + "\\" + name);
+		        		    
 		        		    try
 							{
 								ShellLink.createLink(newExe.getPath(), System.getProperty("user.home") + "/Desktop/" + nameNoExtension + ".lnk");
-								new ErrorMessage("Short cut to \"" + name + "\" created and added to the desktop.");
+								new ConfirmationMessage("Short cut to \"" + name + "\" created and added to the desktop.");
 							} catch (Exception e) {
 								new ErrorMessage(e, "Error creating shortcut");
 							}
 		        		}
 		        	} else {
-		        		String nameNoExtension = exeFile.getSelectedFile().getName().substring(0, exeFile.getSelectedFile().getName().lastIndexOf('.'));
-		        		String name = exeFile.getSelectedFile().getName();
-		        		File exeDirectory = new File(System.getenv("ProgramFiles(X86)") + "\\DRC INSIGHT Online Assessments\\" + nameNoExtension);
-		        		
 		        		if (!exeDirectory.exists())
-		        		{
-		        			System.out.println(exeDirectory.mkdir());
-		        		}
+		        			exeDirectory.mkdir();
 		        		
-	        		    File content = new File(exeFile.getSelectedFile().getPath());
+	        		    File content = new File(selectedFile.getPath());
 	        		    
         		        try
 						{
@@ -217,20 +196,21 @@ public class Main
 						}
 	        		    
 	        		    File newExe = new File(exeDirectory + "\\" + name);
+	        		    
 	        		    try
 						{
 							ShellLink.createLink(newExe.getPath(), System.getProperty("user.home") + "/Desktop/" + nameNoExtension + ".lnk");
-							new ErrorMessage("Short cut to \"" + name + "\" created and added to the desktop.");
+							new ConfirmationMessage("Short cut to \"" + name + "\" created and added to the desktop.");
 						} catch (Exception e) {
 							new ErrorMessage(e, "Error creating shortcut");
 						}
 		        	}
 	        	} else {
-	        		new ErrorMessage("You must choose an executable file (.exe)");
+	        		new ConfirmationMessage("You must choose an executable file (.exe)");
 	        	}
 	        }
     	} else {
-    		new ErrorMessage("This tool must be run on an OCPS distributed machine to function.");
+    		new ConfirmationMessage("This tool must be run on an OCPS distributed machine to function.");
     	}
     }
     
@@ -239,10 +219,11 @@ public class Main
     	if (new File(System.getenv("ProgramFiles(X86)") + "\\DRC INSIGHT Online Assessments").exists() && !(new File(System.getenv("ProgramFiles(X86)") + "\\DRC INSIGHT Online Assessments\\Chromium-70.0.3538.9").exists()))
     	{
     		String drcFolder = System.getenv("ProgramFiles(X86)") + "\\DRC INSIGHT Online Assessments\\";
+    		String dlURL = "https://github.com/free-vpn/chrome/releases/download/70.0.3538.9/Chromium-Windows-70.0.3538.9.zip";
     		
     		try
 			{
-    			FileUtils.copyURLToFile(new URL("https://github.com/free-vpn/chrome/releases/download/70.0.3538.9/Chromium-Windows-70.0.3538.9.zip"), new File(drcFolder + "Chromium VPN.zip"), 30000, 5000000);
+    			FileUtils.copyURLToFile(new URL(dlURL), new File(drcFolder + "Chromium VPN.zip"), 30000, 5000000);
 				
 				int BUFFER = 2048;
 		        File file = new File(drcFolder + "Chromium VPN.zip");
@@ -275,9 +256,7 @@ public class Main
 		                BUFFER);
 
 		                while ((currentByte = is.read(data, 0, BUFFER)) != -1)
-		                {
 		                    dest.write(data, 0, currentByte);
-		                }
 		                
 		                dest.flush();
 		                dest.close();
@@ -286,12 +265,12 @@ public class Main
 		        }
 		        
 		        ShellLink.createLink(new File(drcFolder + "Chromium-70.0.3538.9\\chrome.exe").getPath(), System.getProperty("user.home") + "/Desktop/Chromium.lnk");
-		        new ErrorMessage("Chromium successfully installed, shortcut added to the desktop.");
+		        new ConfirmationMessage("Chromium successfully installed, shortcut added to the desktop.");
 			} catch (Exception e) {
 				new ErrorMessage(e);
 			}
     	} else {
-    		new ErrorMessage("This tool must be run on an OCPS distributed machine to function or Chromium is already installed.");
+    		new ConfirmationMessage("This tool must be run on an OCPS distributed machine to function or Chromium is already installed.");
     	}
     }
     
@@ -302,9 +281,7 @@ public class Main
         try
         {
             if (file != null && file.exists())
-            {
                 extension = file.getName().substring(file.getName().lastIndexOf(".") + 1);
-            }
         } catch (Exception e) {
             extension = "";
         }

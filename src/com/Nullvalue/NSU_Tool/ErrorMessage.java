@@ -27,10 +27,8 @@ public class ErrorMessage
 		int textWidth = 0;
 		
 		for (int i = 0; i < message.split("\n").length; i++)
-		{
 			if ((int) (font.getStringBounds(message.split("\n")[i], frc).getWidth()) > textWidth)
 				textWidth = (int) (font.getStringBounds(message.split("\n")[i], frc).getWidth());
-		}
 		
 		int windowWidthPadding = 60;
 		int windowHeightPadding = 100;
