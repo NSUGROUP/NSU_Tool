@@ -37,6 +37,7 @@ public class ErrorMessage
 		
 		errorWindow.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		errorWindow.setSize(windowWidth, windowHeight);
+		errorWindow.setResizable(false);
 		errorWindow.setLocation(((monitorWidth / 2) - windowWidth / 2), ((monitorHeight / 2) - windowHeight / 2));
 		
 		JLabel labelMessage = new JLabel("<HTML>" + message.replace("\n", "<br>") + "</HTML>", JLabel.CENTER);

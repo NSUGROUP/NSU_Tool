@@ -52,7 +52,7 @@ public class Main
     	int monitorWidth = gd.getDisplayMode().getWidth();
         int monitorHeight = gd.getDisplayMode().getHeight();
         int windowWidth = 240;
-        int windowHeight = 200;
+        int windowHeight = 204;
         
     	window = new JFrame("NSU Tool");
     	JPanel mainPanel = new JPanel();
@@ -62,18 +62,24 @@ public class Main
     	window.getContentPane().add(mainPanel);
     	window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     	window.setResizable(false);
-    	window.setIconImage(new ImageIcon(Main.class.getResource("/images/bbe.png")).getImage());
+    	window.setIconImage(new ImageIcon(Main.class.getResource("/images/icon.png")).getImage());
 
     	JButton bgButton = new JButton("Change Background");
     	JButton exeButton = new JButton("Add Executable");
-    	JButton chromiumButton = new JButton("Install Chromium");
-    	
     	JCheckBox nearbyFilesCheck = new JCheckBox("<html>Include files in parent<br>directory as dependencies<br></html>");
+    	JButton chromiumButton = new JButton("Install Chromium");
+    	JButton torButton = new JButton("Install Tor Browser");
+    	
+    	// https://github.com/NullvaIue/NSU_Tool/releases/download/v0.5.1/Tor.Browser.zip
+    	
+    	nearbyFilesCheck.setToolTipText("<html>This indicates whether the files in the same<br>folder as the executable are dependencies<br>that the executable can't run without.</html>");
+    	chromiumButton.setToolTipText("<html>Chromium is a unrestricted, portable, open-source<br>version of Chrome. Meaning that you can install<br>extensions or change settings that are usually restricted.");
     	
     	mainPanel.add(bgButton);
     	mainPanel.add(exeButton);
     	mainPanel.add(nearbyFilesCheck);
     	mainPanel.add(chromiumButton);
+    	mainPanel.add(torButton);
     	
 		bgButton.addActionListener(new ActionListener()
 		{
@@ -105,6 +111,14 @@ public class Main
 		    {
 	        	installChromium();
 		    }
+		});
+		
+		torButton.addActionListener(new ActionListener()
+		{
+			public void actionPerformed(ActionEvent e)
+			{
+				installTor();
+			}
 		});
     	
     	window.setVisible(true);
@@ -213,64 +227,87 @@ public class Main
     		new ConfirmationMessage("This tool must be run on an OCPS distributed machine to function.");
     	}
     }
-    
+
     public static void installChromium()
     {
-    	if (new File(System.getenv("ProgramFiles(X86)") + "\\DRC INSIGHT Online Assessments").exists() && !(new File(System.getenv("ProgramFiles(X86)") + "\\DRC INSIGHT Online Assessments\\Chromium-70.0.3538.9").exists()))
+		String dlURL = "https://download-chromium.appspot.com/dl/Win_x64?type=snapshots";
+    	String folderName = "chrome-win";
+		String dlName = "Chromium";
+		String exeName = "chrome";
+    	
+		installExeFromURL(dlURL, folderName, dlName, exeName);
+    }
+    
+    public static void installTor()
+    {
+		String dlURL = "https://github.com/NullvaIue/NSU_Tool/releases/download/v0.5.1/Tor.Browser.zip";
+    	String folderName = "tor-browser";
+		String dlName = "Tor Browser";
+		String exeName = "firefo";
+    	
+		installExeFromURL(dlURL, folderName, dlName, exeName);
+    }
+    
+    public static void installExeFromURL(String dlURL, String folderName, String dlName, String exeName)
+    {
+    	String drcFolder = System.getenv("ProgramFiles(X86)") + "\\DRC INSIGHT Online Assessments\\";
+    	
+    	if (new File(System.getenv("ProgramFiles(X86)") + "\\DRC INSIGHT Online Assessments").exists())
     	{
-    		String drcFolder = System.getenv("ProgramFiles(X86)") + "\\DRC INSIGHT Online Assessments\\";
-    		String dlURL = "https://github.com/free-vpn/chrome/releases/download/70.0.3538.9/Chromium-Windows-70.0.3538.9.zip";
-    		
-    		try
-			{
-    			FileUtils.copyURLToFile(new URL(dlURL), new File(drcFolder + "Chromium VPN.zip"), 30000, 5000000);
-				
-				int BUFFER = 2048;
-		        File file = new File(drcFolder + "Chromium VPN.zip");
-
-		        @SuppressWarnings("resource")
-				ZipFile zip = new ZipFile(file);
-		        String newPath = System.getenv("ProgramFiles(X86)") + "\\DRC INSIGHT Online Assessments\\";
-
-		        new File(newPath).mkdir();
-		        Enumeration<? extends ZipEntry> zipFileEntries = zip.entries();
-
-		        while (zipFileEntries.hasMoreElements())
-		        {
-		            ZipEntry entry = (ZipEntry) zipFileEntries.nextElement();
-		            String currentEntry = entry.getName();
-
-		            File destFile = new File(newPath, currentEntry);
-		            File destinationParent = destFile.getParentFile();
-
-		            destinationParent.mkdirs();
-
-		            if (!entry.isDirectory())
-		            {
-		                BufferedInputStream is = new BufferedInputStream(zip.getInputStream(entry));
-		                int currentByte;
-		                byte data[] = new byte[BUFFER];
-
-		                FileOutputStream fos = new FileOutputStream(destFile);
-		                BufferedOutputStream dest = new BufferedOutputStream(fos,
-		                BUFFER);
-
-		                while ((currentByte = is.read(data, 0, BUFFER)) != -1)
-		                    dest.write(data, 0, currentByte);
-		                
-		                dest.flush();
-		                dest.close();
-		                is.close();
-		            }
-		        }
-		        
-		        ShellLink.createLink(new File(drcFolder + "Chromium-70.0.3538.9\\chrome.exe").getPath(), System.getProperty("user.home") + "/Desktop/Chromium.lnk");
-		        new ConfirmationMessage("Chromium successfully installed, shortcut added to the desktop.");
-			} catch (Exception e) {
-				new ErrorMessage(e);
-			}
+    		if (!(new File(System.getenv("ProgramFiles(X86)") + "\\DRC INSIGHT Online Assessments\\" + folderName).exists()))
+    		{
+	    		try
+				{
+	    			FileUtils.copyURLToFile(new URL(dlURL), new File(drcFolder + dlName + ".zip"), 30000, 300000);
+					
+					int BUFFER = 2048;
+			        File file = new File(drcFolder + dlName + ".zip");
+	
+			        @SuppressWarnings("resource")
+					ZipFile zip = new ZipFile(file);
+			        String newPath = System.getenv("ProgramFiles(X86)") + "\\DRC INSIGHT Online Assessments\\";
+	
+			        new File(newPath).mkdir();
+			        Enumeration<? extends ZipEntry> zipFileEntries = zip.entries();
+	
+			        while (zipFileEntries.hasMoreElements())
+			        {
+			            ZipEntry entry = (ZipEntry) zipFileEntries.nextElement();
+			            String currentEntry = entry.getName();
+	
+			            File destFile = new File(newPath, currentEntry);
+			            File destinationParent = destFile.getParentFile();
+	
+			            destinationParent.mkdirs();
+	
+			            if (!entry.isDirectory())
+			            {
+			                BufferedInputStream is = new BufferedInputStream(zip.getInputStream(entry));
+			                int currentByte;
+			                byte data[] = new byte[BUFFER];
+	
+			                FileOutputStream fos = new FileOutputStream(destFile);
+			                BufferedOutputStream dest = new BufferedOutputStream(fos, BUFFER);
+	
+			                while ((currentByte = is.read(data, 0, BUFFER)) != -1)
+			                    dest.write(data, 0, currentByte);
+			                
+			                dest.flush();
+			                dest.close();
+			                is.close();
+			            }
+			        }
+			        
+			        ShellLink.createLink(new File(drcFolder + folderName + "\\" + exeName + ".exe").getPath(), System.getProperty("user.home") + "/Desktop/" + dlName + ".lnk");
+			        new ConfirmationMessage(dlName + " successfully installed, a shortcut has been added to the desktop.");
+				} catch (Exception e) {
+					new ErrorMessage(e);
+				}
+	    	} else {
+	    		new ConfirmationMessage(dlName + " is already installed.");
+	    	}
     	} else {
-    		new ConfirmationMessage("This tool must be run on an OCPS distributed machine to function or Chromium is already installed.");
+    		new ConfirmationMessage("This tool must be run on an OCPS distributed machine to function.") ;
     	}
     }
     
